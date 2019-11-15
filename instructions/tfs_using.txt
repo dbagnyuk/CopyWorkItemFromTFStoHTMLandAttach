@@ -1,0 +1,3 @@
+Install-Package Microsoft.VisualStudio.Services.Client -Version 16.153.0
+Install-Package Microsoft.TeamFoundationServer.Client -Version 16.153.0
+Install-Package Microsoft.TeamFoundationServer.ExtendedClient -Version 16.153.0
