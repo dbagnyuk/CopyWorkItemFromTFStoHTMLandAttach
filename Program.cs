@@ -51,6 +51,11 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
                 if (itemId == 0)
                 {
                     editConfigFile(configFile);
+                    while (true)
+                    {
+                        if (readConfigFile(configFile, ref config))
+                            break;
+                    }
                     continue;
                 }
                 break;
