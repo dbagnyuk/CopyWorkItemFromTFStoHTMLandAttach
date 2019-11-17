@@ -25,7 +25,7 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 {
     class Program
     {
-        public const string Key = "nvision";
+        public const string Key = "pass";
 
         [STAThread]
         static void Main(string[] args)
