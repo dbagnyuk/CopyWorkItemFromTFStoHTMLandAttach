@@ -25,6 +25,8 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 {
     class Program
     {
+        public const string Key = "nvision";
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -32,16 +34,15 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 
             string configFile = @"CopyWorkItemFromTFStoHTMLandAttach.conf";
             int itemId;
+            string[] config = null; // string array for read the config
 
+            while(true)
+            {
+                if (readConfigFile(configFile, ref config))
+                    break;
+            }
             while (true)
             {
-                // check if the config file exist and if it more than 0 bytes
-                if (!File.Exists(configFile) || new FileInfo(configFile).Length == 0)
-                {
-                    callEditConfig(configFile);
-                    continue;
-                }
-
                 Console.WriteLine("Enter TFS number or 'config' for modify [login/password/path to attach] in config file.\n");
                 Console.Write("Input TFS id (or 'config'): ");
                 //int itemId = 1936268;
@@ -54,56 +55,13 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
                 }
                 break;
             }
-            // string array for read the config
-            string[] config = null;
-            // read the config file
-            try
-            {
-                // read config file into string array
-                config = System.IO.File.ReadAllLines(configFile);
-            }
-            catch (Exception ex)
-            {
-                exExit(ex);
-            }
-
-            // chek config if it has less or more than 3 string
-            if (config.Length < 3 || config.Length > 3)
-            {
-                callEditConfig(configFile);
-                // read the config file
-                try
-                {
-                    // read config file into string array
-                    config = System.IO.File.ReadAllLines(configFile);
-                }
-                catch (Exception ex)
-                {
-                    exExit(ex);
-                }
-            }
-            // check the string from string array if it's empty or not
-            foreach (var s in config)
-                if (s.Length == 0)
-                {
-                    callEditConfig(configFile);
-                    // read the config file
-                    try
-                    {
-                        // read config file into string array
-                        config = System.IO.File.ReadAllLines(configFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        exExit(ex);
-                    }
-                    break;
-                }
 
             // save the configuration
             string DomainName = config[0];
-            string Password = config[1];
-            string pathToTasks = config[2];
+            //string Password = config[1];
+            string Password = Cipher.Decrypt(config[1], Key);
+            //string pathToTasks = config[2];
+            string pathToTasks = (config[2].EndsWith("\\") ? config[2] : config[2] + "\\");
 
             // ask if user want to download the attachments
             Console.Clear();
@@ -143,8 +101,6 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 
             // create web link for tfs id
             string tfsLink = tpc.Uri + workItem.AreaPath.Remove(workItem.AreaPath.IndexOf((char)92)) + "/_workitems/edit/";
-
-            Console.Write(".");
 
             string pathToHtml = pathToTasks + workItem.Type.Name + " " + workItem.Id + ".html";
             string pathToAttach = pathToTasks + workItem.Id;
@@ -365,130 +321,6 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
             Console.Clear(); // clearing the console
             return result;
         }
-        // process the download attach confirmation
-        public static bool downloadConfirm()
-        {
-            char enteredSymbol; // char for the value of the pressed key
-            bool confirm = false;
-
-            // loop in which we will analyze pressed keys
-            while (true)
-            {
-                // read the ASCII code from pressed button and save it in char. ReadKey(true) - is for decline write it in console
-                enteredSymbol = Console.ReadKey(true).KeyChar;
-
-                // condition: if the entered symbol 'y' or 'Y'
-                if ((enteredSymbol == 89 || enteredSymbol == 121))
-                {
-                    Console.Write((char)enteredSymbol);
-                    Thread.Sleep(500);
-                    confirm = true;
-                    break;
-                }
-
-                // condition: if the entered symbol 'n' or 'N'
-                if ((enteredSymbol == 78 || enteredSymbol == 110))
-                {
-                    Console.Write((char)enteredSymbol);
-                    Thread.Sleep(500);
-                    confirm = false;
-                    break;
-                }
-
-                continue;
-            }
-
-            Console.Clear(); // clearing the console
-            return confirm; // return the bool
-        }
-        // function for create and editing the config file
-        public static void editConfigFile(string ConfFile)
-        {
-            Console.Clear();
-            string[] config = null;
-            string tempInput;
-
-            FileStream fileStream = null;
-            StreamWriter streamWriter = null;
-
-            // check if config exists or biger than 0 byes
-            if (File.Exists(ConfFile) && new FileInfo(ConfFile).Length != 0)
-            {
-                config = System.IO.File.ReadAllLines(ConfFile);
-                fileStream = new FileStream(ConfFile, FileMode.Truncate);
-            }
-            else
-            {
-                File.Delete(ConfFile);
-                fileStream = new FileStream(ConfFile, FileMode.CreateNew);
-            }
-            streamWriter = new StreamWriter(fileStream);
-
-            //try
-            //{
-            //    config = System.IO.File.ReadAllLines(ConfFile);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.Write(ex.Message);
-            //    Console.Read();
-            //    System.Environment.Exit(1);
-            //}
-
-            Console.WriteLine("Enter a new login, password, and path to attachments.\nUse Enter to leave previous login and path.\n");
-
-            Console.Write("Enter new login [domain\\login]: ");
-            tempInput = pathAndLoginInput();
-            if (tempInput.CompareTo("#") == 0)
-            {
-                streamWriter.WriteLine(config[0]);
-                Console.Write("\n");
-            }
-            else
-            {
-                streamWriter.WriteLine(tempInput.ToLower());
-                Console.Write("\n");
-            }
-
-            Console.Write("Enter new password: ");
-            streamWriter.WriteLine(passwordInput());
-            Console.Write("\n");
-
-            //while (true)
-            //{
-            //    Console.Clear();
-            //    Console.Write("Enter old password: ");
-            //    string old_pass = Console.ReadLine();
-            //    if (config[1].CompareTo(old_pass) == 0)
-            //    {
-            //        Console.Clear();
-            //        Console.Write("Enter new password: ");
-            //        config[1] = Console.ReadLine();
-            //        break;
-            //    }
-            //}
-
-            Console.Write("Enter new save destination: ");
-            tempInput = pathAndLoginInput();
-            if (tempInput.CompareTo("#") == 0)
-            {
-                streamWriter.WriteLine(config[2]);
-                Console.Write("\n");
-            }
-            else
-            {
-                streamWriter.WriteLine(tempInput.ToLower());
-                Console.Write("\n");
-            }
-
-            streamWriter.Close();
-            fileStream.Close();
-
-            Console.Clear();
-            Console.Write("Config was updated!");
-            Thread.Sleep(1000);
-            Console.Clear();
-        }
         // process password input
         public static string passwordInput()
         {
@@ -550,7 +382,7 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
                 // condition: if the Enter button pressed we finish read the entering
                 else if (enteredSymbol == 13)
                 {
-                    password = new string(sString);
+                    password = new string(sString, 0, digitsCount);
                     break;
                 }
             }
@@ -610,27 +442,180 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
                 // condition: if the Enter button pressed we finish read the entering
                 else if (enteredSymbol == 13)
                 {
-                    output = new string(sString);
+                    output = new string(sString, 0, digitsCount);
                     break;
                 }
             }
             return output;
+        }
+        // process the download attach confirmation
+        public static bool downloadConfirm()
+        {
+            char enteredSymbol; // char for the value of the pressed key
+            bool confirm = false;
+
+            // loop in which we will analyze pressed keys
+            while (true)
+            {
+                // read the ASCII code from pressed button and save it in char. ReadKey(true) - is for decline write it in console
+                enteredSymbol = Console.ReadKey(true).KeyChar;
+
+                // condition: if the entered symbol 'y' or 'Y'
+                if ((enteredSymbol == 89 || enteredSymbol == 121))
+                {
+                    Console.Write((char)enteredSymbol);
+                    Thread.Sleep(500);
+                    confirm = true;
+                    break;
+                }
+
+                // condition: if the entered symbol 'n' or 'N'
+                if ((enteredSymbol == 78 || enteredSymbol == 110))
+                {
+                    Console.Write((char)enteredSymbol);
+                    Thread.Sleep(500);
+                    confirm = false;
+                    break;
+                }
+
+                continue;
+            }
+
+            Console.Clear(); // clearing the console
+            return confirm; // return the bool
+        }
+        // read the config file to memory
+        public static bool readConfigFile(string configFile, ref string[] config)
+        {
+            bool configReaded = false;
+
+            // check if the config file exist and if it more than 0 bytes
+            if (!File.Exists(configFile) || new FileInfo(configFile).Length == 0)
+            {
+                callEditConfig(configFile);
+                return configReaded;
+            }
+            // read the config file
+            try
+            {
+                // read config file into string array
+                config = System.IO.File.ReadAllLines(configFile);
+            }
+            catch (Exception ex)
+            {
+                exExit(ex);
+                callEditConfig(configFile);
+                return configReaded;
+            }
+            // chek config if it has less or more than 3 string
+            if (config.Length != 3)
+            {
+                callEditConfig(configFile);
+                return configReaded;
+            }
+            // check the string from string array if it's empty or not
+            foreach (var s in config)
+                if (s.Length == 0)
+                {
+                    callEditConfig(configFile);
+                    return configReaded;
+                }
+            return true;
+        }
+        // call the creating or editing the onfig file
+        public static void callEditConfig(string conf)
+        {
+            Console.Clear();
+            Console.WriteLine("You need to create/edit the config file first!");
+            Thread.Sleep(1000);
+            Console.Clear();
+            editConfigFile(conf);
+            Console.Clear();
+        }
+        // function for create and editing the config file
+        public static void editConfigFile(string ConfFile)
+        {
+            string[] config = null;
+            string tempInput;
+
+            FileStream fileStream = null;
+            StreamWriter streamWriter = null;
+
+            // check if config exists or biger than 0 byes
+            if (File.Exists(ConfFile) && new FileInfo(ConfFile).Length != 0)
+            {
+                config = System.IO.File.ReadAllLines(ConfFile);
+                fileStream = new FileStream(ConfFile, FileMode.Truncate);
+            }
+            else
+            {
+                File.Delete(ConfFile);
+                fileStream = new FileStream(ConfFile, FileMode.CreateNew);
+            }
+            streamWriter = new StreamWriter(fileStream);
+
+            Console.WriteLine("Enter a new login, password, and path to attachments.\nUse Enter to leave previous login and path.\n");
+
+            Console.Write("Enter new login [domain\\login]: ");
+            tempInput = pathAndLoginInput();
+            if (tempInput.CompareTo("#") == 0)
+            {
+                streamWriter.WriteLine(config[0]);
+                Console.Write("\n");
+            }
+            else
+            {
+                streamWriter.WriteLine(tempInput.ToLower());
+                Console.Write("\n");
+            }
+
+            Console.Write("Enter new password: ");
+            //streamWriter.WriteLine(passwordInput());
+            streamWriter.WriteLine(Cipher.Encrypt(passwordInput(), Key));
+            Console.Write("\n");
+
+            //while (true)
+            //{
+            //    Console.Clear();
+            //    Console.Write("Enter old password: ");
+            //    string old_pass = Console.ReadLine();
+            //    if (config[1].CompareTo(old_pass) == 0)
+            //    {
+            //        Console.Clear();
+            //        Console.Write("Enter new password: ");
+            //        config[1] = Console.ReadLine();
+            //        break;
+            //    }
+            //}
+
+            Console.Write("Enter new save destination: ");
+            tempInput = pathAndLoginInput();
+            if (tempInput.CompareTo("#") == 0)
+            {
+                streamWriter.WriteLine(config[2]);
+                Console.Write("\n");
+            }
+            else
+            {
+                streamWriter.WriteLine(tempInput.ToLower());
+                Console.Write("\n");
+            }
+
+            streamWriter.Close();
+            fileStream.Close();
+
+            Console.Clear();
+            Console.Write("Config was updated!");
+            Thread.Sleep(1000);
         }
         // for write the catched exception and exit
         public static void exExit(Exception ex)
         {
             Console.Clear();
             Console.WriteLine(ex.Message);
-            Console.Write("Please 'Enter' for exit...");
+            Console.Write("\nPlease 'Enter' for exit...");
             Console.Read();
             System.Environment.Exit(1);
-        }
-        // call the creating or editing the onfig file
-        public static void callEditConfig(string conf)
-        {
-            Console.WriteLine("You need to create/edit the config file!");
-            Thread.Sleep(1000);
-            editConfigFile(conf);
         }
     }
 }
