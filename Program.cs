@@ -25,7 +25,7 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 {
     class Program
     {
-        public const string Key = "nvision";
+        public const string Key = "pass";
 
         [STAThread]
         static void Main(string[] args)
@@ -130,12 +130,12 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
 
             streamWriter.WriteLine(@"<p><font style=""background-color:rgb(255, 255, 255); color:rgb(0, 0, 0); font-family:Segoe UI; font-size:12px;"">"
                                    + workItem.Type.Name + " " + workItem.Id + ": " + workItem.Title
-                                   + @"</font><p>");
+                                   + @"</font></p>");
 
             streamWriter.WriteLine(@"<p style=""border: 1px solid; color: red; width: 50%;"">"
                                    + @"<font style=""background-color:rgb(255, 255, 255); color:rgb(0, 0, 0); font-family:Segoe UI; font-size:12px;"">"
                                    + workItem.Type.Name + " is <b>" + workItem.State + "</b> and Assigned To <b>" + workItem.Fields["Assigned To"].Value + "</b>"
-                                   + @"</font><p>");
+                                   + @"</font></p>");
 
             streamWriter.WriteLine(@"<div style=""border: 1px solid black; background-color:lightgray;"">TITLE:</div>");
             streamWriter.WriteLine("<p>{0}</p>", workItem.Title);
@@ -184,7 +184,7 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
             streamWriter.WriteLine(@"</table></p>");
 
             streamWriter.WriteLine(@"<div style=""border: 1px solid black; background-color:lightgray;"">LINK:</div>");
-            streamWriter.WriteLine(@"<p><a href=""{0}{1}"">{0}{1}</a><p>", tfsLink, workItem.Id);
+            streamWriter.WriteLine(@"<p><a href=""{0}{1}"">{0}{1}</a></p>", tfsLink, workItem.Id);
 
             // download the attachments from tfs item
             if (confirm)
@@ -218,7 +218,7 @@ namespace CopyWorkItemFromTFStoHTMLandAttach
                 }
 
                 streamWriter.WriteLine(@"<div style=""border: 1px solid black; background-color:lightgray;"">ATTACHMENTS:</div>");
-                streamWriter.WriteLine(@"<p><a href=""{0}"">{0}</a><p>", pathToAttach);
+                streamWriter.WriteLine(@"<p><a href=""{0}"">{0}</a></p>", pathToAttach);
             }
 
             streamWriter.WriteLine("{0}", "</body>");
